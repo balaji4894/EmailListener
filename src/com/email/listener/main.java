@@ -1,7 +1,11 @@
 package com.email.listener;
 
 import java.io.FileInputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Properties;
+import java.util.logging.FileHandler;
+import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,40 +24,74 @@ import com.sun.mail.imap.IMAPFolder;
 
 
 public class main {
-
+	
 	private static final Logger log = Logger.getLogger( main.class.getName() );
 	 private final static String QUEUE_NEWEMAIL = "NEWEMAIL";
-	 static Double _FFLimit=0.0;
+	 private static String QUsername="";
+	 private  static String QPassword="";
+	 private static String _Email="";
+	 private static String _Password="";
+	
 	 
+	 
+	 
+	 
+	 static Double _FFLimit=0.0;
+	 private void AttachLogHandler()
+	 {
+		 try
+			{
+			Date date = new Date();
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+			Handler handler = new FileHandler("C:\\Users\\Ben\\IBLogs\\EmailListener"+sdf.format(date)+".log");
+			log.addHandler(handler);
+			}
+			catch (Exception e)
+			{
+				System.out.println(e.toString());
+			}
+	 }
 	public static void main(String[] args) {
 		main m = new main();
+		m.AttachLogHandler();
+		m.GetConfig();
 		if (m.initialiseQueue())
 		{
 			m.StartListenting();
 		}
 	}
-	
-	private void StartListenting()
+	private void GetConfig()
 	{
-		
-		 Properties props = new Properties();
-		 String _Email="";
-		 String _Password="";
-		 String _TradeAlertEmail="";
-		 final boolean FilterEmails=true;
 		 try {
+			 Properties props = new Properties();
 			 log.log(Level.INFO ,"Processing config entries");
 			props.load(new FileInputStream("c:\\config.properties"));
 			_Email = props.getProperty("email");
 	    	_Password = props.getProperty("password");
-	    	_TradeAlertEmail = props.getProperty("alertemail");
+	    	
+	    	QUsername = props.getProperty("qusername");
+	    	QPassword = props.getProperty("qpassword");
 			_FFLimit = Double.valueOf(props.getProperty("fflimit"));
-			 log.log(Level.INFO ,"Processing config entries -Done");
+			 log.log(Level.INFO ,"Processing config entries complete");
+			 
+			 
 		} catch (Exception e1) {
 			
 			 log.log(Level.INFO ,e1.toString());
 			
 		}
+		
+		
+	}
+	private void StartListenting()
+	{
+		
+		 Properties props = new Properties();
+		 
+		 
+		
+		 final boolean FilterEmails=true;
+		
 		   props.setProperty("mail.store.protocol", "imaps");
 	        try {
 	            Session session = Session.getInstance(props, null);
@@ -146,15 +184,18 @@ public class main {
 		{
 		log.log(Level.INFO, "Connecting to queue {0}",QUEUE_NEWEMAIL);
 		factory = new ConnectionFactory();
+	    factory.setUsername(QUsername); 
+		factory.setPassword(QPassword); 
+		factory.setVirtualHost("/"); 
 		factory.setHost("localhost");
 		connection = factory.newConnection();
 		channel  = connection.createChannel();
 		channel.queueDeclare(QUEUE_NEWEMAIL, false, false, false, null);
-		log.log(Level.INFO, "SUCCESS : Queue initialised an running");
+		log.log(Level.INFO, "SUCCESS : Queue initialised and running");
 		}
 		catch (Exception e)
 		{
-			log.log(Level.SEVERE, "Failed initialisation of queue : ",e.toString());
+			log.log(Level.SEVERE, "Failed initialisation of queue : {0}",e.toString());
 			return false;
 		}
 		return true;
