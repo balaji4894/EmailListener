@@ -31,7 +31,7 @@ public class main {
 	 private  static String QPassword="";
 	 private static String _Email="";
 	 private static String _Password="";
-	
+	 private static String _AlertEmailAddress="";
 	 
 	 
 	 
@@ -71,9 +71,10 @@ public class main {
 	    	
 	    	QUsername = props.getProperty("qusername");
 	    	QPassword = props.getProperty("qpassword");
+	    	_AlertEmailAddress = props.getProperty("alertemail");
 			_FFLimit = Double.valueOf(props.getProperty("fflimit"));
 			 log.log(Level.INFO ,"Processing config entries complete");
-			 
+			 log.log(Level.INFO ,"Using Config : Email : {0} , Password : {1}, QUsername : {2}, QPassword : {3}, AlertEmail : {4}, FFLimit {5}",new Object[]{_Email,_Password,QUsername,QPassword,_AlertEmailAddress,_FFLimit});
 			 
 		} catch (Exception e1) {
 			
@@ -122,12 +123,17 @@ public class main {
 						           
 								
 						        
-						     //    if (from.contains("gold@bullsonwallstreet.com"))
-						      //     {					            
+						       if (from.contains(_AlertEmailAddress))
+								{					            
 						     
-						            log.log(Level.INFO ,"Routing email with subject {0}",msg.getSubject());
+						         log.log(Level.INFO ,"Routing email with subject {0}",msg.getSubject());
 						         RouteMessage(msg.getSubject());
-						            //     }
+						        }
+						       else
+						       {
+						    	   log.log(Level.INFO ,"Email from wrong sender, not routed");
+						    	   
+						       }
 								
 							} catch (MessagingException e) {
 								// TODO Auto-generated catch block
