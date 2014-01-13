@@ -20,21 +20,27 @@ import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
 import com.rabbitmq.client.ConnectionFactory;
 import com.rabbitmq.client.QueueingConsumer;
+import com.sun.mail.iap.ProtocolException;
 import com.sun.mail.imap.IMAPFolder;
+import com.sun.mail.imap.protocol.IMAPProtocol;
 
 
 public class main {
 	
 	private static final Logger log = Logger.getLogger( main.class.getName() );
 	 private final static String QUEUE_NEWEMAIL = "NEWEMAIL";
+	 private final static String QUEUE_WEBREQUEST = "EMAILWEBREQUEST";
+	 private final static String QUEUE_WEBRESPONSE = "EMAILWEBRESPONSE";
 	 private static String QUsername="";
 	 private  static String QPassword="";
 	 private static String _Email="";
 	 private static String _Password="";
 	 private static String _AlertEmailAddress="";
-	 
-	 
-	 
+	 private static  Folder folder;
+
+		private static ConnectionFactory factory;
+		private static Connection connection;
+		private static Channel channel;
 	 
 	 static Double _FFLimit=0.0;
 	 private void AttachLogHandler()
@@ -53,12 +59,37 @@ public class main {
 	 }
 	public static void main(String[] args) {
 		main m = new main();
+		
+	
+		
+		
+		
 		m.AttachLogHandler();
 		m.GetConfig();
-		if (m.initialiseQueue())
-		{
+		m.initialiseQueue();
+		Thread t1 = new Thread(new Runnable() {
+
+	            public void run() {
+	            	 log.log(Level.INFO ,"Listening for new web querys" );
+	               
+	            	 Thread t1 = new Thread(
+               		        new SetupWebListener(folder,QUsername,QPassword,_Email,_Password,connection), "IdleConnectionKeepAlive"
+               		    );
+	            	 
+	            	 
+	            	 
+	            }
+		});
+	            	 t1.start();
+		
+	           
+		
+		
+		//if ()
+	//	{
 			m.StartListenting();
-		}
+		//}
+		
 	}
 	private void GetConfig()
 	{
@@ -84,6 +115,76 @@ public class main {
 		
 		
 	}
+	private static class SetupWebListener implements Runnable
+	{
+		
+		 private final static String QUEUE_WEBREQUEST = "EMAILWEBREQUEST";
+		 private final static String QUEUE_WEBRESPONSE = "EMAILWEBRESPONSE";
+		 private static String QUsername="";
+		 private  static String QPassword="";
+		 private static String _Email="";
+		 private static String _Password="";
+		 private Connection connection;
+		 private  Folder folder;
+		
+		
+		
+		public SetupWebListener(Folder folder, String QUsername, String QPassword, String _Email, String _Pasword, Connection Connection) {
+	        this.folder = folder;
+	        this.QPassword = QPassword;
+	        this._Email = _Email;
+	        this._Password = _Password;
+	        this.connection = Connection;
+	               
+	        
+	    }
+		
+	
+		 @Override
+		    public void run() {
+	
+		try{
+		
+	//		Properties props = new Properties();
+	//		log.log(Level.INFO ,"Processing config entries");
+	//		props.load(new FileInputStream("c:\\config.properties"));
+	//		QUsername = props.getProperty("qusername");
+	 //   	QPassword = props.getProperty("qpassword");
+	  //  	log.log(Level.INFO ,"Processing config entries complete");
+	   // 	factory = new ConnectionFactory();
+		//    factory.setHost("localhost");
+		 //   factory.setUsername(QUsername); 
+		//	factory.setPassword(QPassword); 
+		//	factory.setVirtualHost("/");   
+		    
+		   // connection = factory.newConnection();
+		    Channel channel_Recv = connection.createChannel();
+		    Channel channel_Send = connection.createChannel();
+		    channel_Recv.queueDeclare(QUEUE_WEBREQUEST, false, false, false, null);
+		    channel_Send.queueDeclare(QUEUE_WEBRESPONSE, false, false, false, null);
+		    
+		   
+		    
+		    QueueingConsumer consumer = new QueueingConsumer(channel_Recv);
+		    channel_Recv.basicConsume(QUEUE_WEBREQUEST, true, consumer);
+		    while (true) {
+			      log.log(Level.INFO,"EMAIL waiting for web querys on Queue : {0}",QUEUE_WEBREQUEST);
+			      QueueingConsumer.Delivery delivery = consumer.nextDelivery();
+			      String message = new String(delivery.getBody());
+			      log.log(Level.INFO,"Received new message on Topic {0} : {1}",new Object[]{QUEUE_WEBREQUEST,message});
+			      String Response="";
+			      Response = Integer.toString(folder.getMessageCount());
+			      channel_Send.basicPublish("", QUEUE_WEBRESPONSE, null, Response.getBytes());
+			      log.log(Level.INFO,"Sent WebReply message on Topic {0} : {1}",new Object[]{QUEUE_WEBRESPONSE,Response});
+		    }
+		}
+		catch (Exception e)
+		{
+			 log.log(Level.INFO,e.toString());
+		}
+	
+	}}
+	
 	private void StartListenting()
 	{
 		
@@ -94,15 +195,22 @@ public class main {
 		 final boolean FilterEmails=true;
 		
 		   props.setProperty("mail.store.protocol", "imaps");
-	        try {
+	
+		   
+		   
+		   
+		   
+		   try {
 	            Session session = Session.getInstance(props, null);
 	            Store store = session.getStore();
-	            store.connect("imap.gmail.com", _Email, _Password);
-	           
-	            final Folder folder = store.getFolder("INBOX");
-	            
+	        //    store.connect("imap-mail.outlook.com", _Email, _Password);
+	         store.connect("imap.gmail.com", _Email, _Password);
+	            //  final Folder folder =    store.getDefaultFolder();
+	        
+	            folder = store.getFolder("INBOX");
+	          //  System.out.println("No of Unread Messages : " + folder.getUnreadMessageCount());
 		         //   final IMAPFolder folder = (IMAPFolder) imapStore.getFolder("Inbox");
-		            folder.open(Folder.READ_WRITE);
+		            folder.open(Folder.READ_ONLY);
 		            
 		           
 		            
@@ -123,17 +231,17 @@ public class main {
 						           
 								
 						        
-						       if (from.contains(_AlertEmailAddress))
+						     if (from.contains(_AlertEmailAddress))
 								{					            
 						     
 						         log.log(Level.INFO ,"Routing email with subject {0}",msg.getSubject());
 						         RouteMessage(msg.getSubject());
-						        }
-						       else
+						      }
+						    else
 						       {
-						    	   log.log(Level.INFO ,"Email from wrong sender, not routed");
+						      log.log(Level.INFO ,"Email not from : {0} and not routed",_AlertEmailAddress);
 						    	   
-						       }
+						   }
 								
 							} catch (MessagingException e) {
 								// TODO Auto-generated catch block
@@ -160,13 +268,29 @@ public class main {
 
 			            public void run() {
 			            	 log.log(Level.INFO ,"Listening for new emails" );
-			                try {
-			                    while (true) {
+			               
+			            	 Thread t1 = new Thread(
+		                		        new KeepAliveRunnable(folder), "IdleConnectionKeepAlive"
+		                		    );
+			            	 t1.start();
+			            	 
+			            	 try {
+			                	
+			                	
+
+			                		   
+			                	
+			                	
+			                    while (!Thread.interrupted()) {
 			                    	
 			                        ((IMAPFolder) folder).idle();
 			                    }
-			                } catch (MessagingException ex) {
-			                    //Handling exception goes here
+			                } catch (Exception ex) {
+			                	 log.log(Level.INFO ,ex.toString() );
+			                	 if (t1.isAlive()) {
+			                	        t1.interrupt();
+			                	    }
+			                	 
 			                }
 			            }
 			        });
@@ -180,9 +304,7 @@ public class main {
 		        }
 		} 
 	
-	private ConnectionFactory factory;
-	private Connection connection;
-	private Channel channel;
+
 	
 	private boolean initialiseQueue()
 	{
@@ -219,6 +341,40 @@ private void RouteMessage(String message)
 		log.log(Level.SEVERE, "Unable to route message : ",e.toString());
 	}
 }
-}
 
+private static class KeepAliveRunnable implements Runnable {
+
+    private static final long KEEP_ALIVE_FREQ = 300000; // 5 minutes
+
+    private Folder folder;
+
+    public KeepAliveRunnable(Folder folder2) {
+        this.folder = folder2;
+    }
+
+    @Override
+    public void run() {
+        while (!Thread.interrupted()) {
+            try {
+                Thread.sleep(KEEP_ALIVE_FREQ);
+
+                // Perform a NOOP just to keep alive the connection
+                log.log(Level.INFO,"Performing a NOOP to keep alvie the connection");
+                ((IMAPFolder) folder).doCommand(new IMAPFolder.ProtocolCommand() {
+                    public Object doCommand(IMAPProtocol p)
+                            throws ProtocolException {
+                        p.simpleCommand("NOOP", null);
+                        return null;
+                    }
+                });
+            } catch (InterruptedException e) {
+            	log.log(Level.WARNING,"Aborting thread");
+            } catch (MessagingException e) {
+                // Shouldn't really happen...
+            	log.log(Level.INFO,"Unexpected exception while keeping alive the IDLE connection {0}", e);
+            }
+        }
+    }
+}
+}
 
