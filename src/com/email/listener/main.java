@@ -66,7 +66,8 @@ public class main {
 		
 		m.AttachLogHandler();
 		m.GetConfig();
-		m.initialiseQueue();
+	
+		/*
 		Thread t1 = new Thread(new Runnable() {
 
 	            public void run() {
@@ -83,12 +84,12 @@ public class main {
 	            	 t1.start();
 		
 	           
+		*/
 		
-		
-		//if ()
-	//	{
+		if (	m.initialiseQueue())
+		{
 			m.StartListenting();
-		//}
+		}
 		
 	}
 	private void GetConfig()
@@ -240,7 +241,7 @@ public class main {
 						    else
 						       {
 						      log.log(Level.INFO ,"Email not from : {0} and not routed",_AlertEmailAddress);
-						    	   
+					    	   
 						   }
 								
 							} catch (MessagingException e) {
@@ -354,16 +355,24 @@ private static class KeepAliveRunnable implements Runnable {
 
     @Override
     public void run() {
+    	 log.log(Level.INFO ,"Running Keep Alive" );
         while (!Thread.interrupted()) {
             try {
                 Thread.sleep(KEEP_ALIVE_FREQ);
 
                 // Perform a NOOP just to keep alive the connection
-                log.log(Level.INFO,"Performing a NOOP to keep alvie the connection");
+                log.log(Level.INFO,"Performing a NOOP to keep the connection alive");
                 ((IMAPFolder) folder).doCommand(new IMAPFolder.ProtocolCommand() {
                     public Object doCommand(IMAPProtocol p)
                             throws ProtocolException {
                         p.simpleCommand("NOOP", null);
+                        try {
+						int i =	folder.getMessageCount();
+							log.log(Level.INFO,"Message Count : {0}",i);	
+                        } catch (MessagingException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
                         return null;
                     }
                 });
