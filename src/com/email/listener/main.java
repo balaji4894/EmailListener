@@ -1,6 +1,7 @@
 package com.email.listener;
 
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Properties;
@@ -232,17 +233,17 @@ public class main {
 						           
 								
 						        
-						     if (from.contains(_AlertEmailAddress))
-								{					            
+						 //    if (from.contains(_AlertEmailAddress))
+						//		{					            
 						     
 						         log.log(Level.INFO ,"Routing email with subject {0}",msg.getSubject());
 						         RouteMessage(msg.getSubject());
-						      }
-						    else
-						       {
+						//      }
+						 //   else
+						 //      {
 						      log.log(Level.INFO ,"Email not from : {0} and not routed",_AlertEmailAddress);
 					    	   
-						   }
+						//   }
 								
 							} catch (MessagingException e) {
 								// TODO Auto-generated catch block
@@ -380,7 +381,14 @@ private static class KeepAliveRunnable implements Runnable {
             	log.log(Level.WARNING,"Aborting thread");
             } catch (MessagingException e) {
                 // Shouldn't really happen...
+            	  try {
+					Runtime.getRuntime().exec("cmd /c java -jar C:\\Users\\Ben\\Desktop\\EmailListener.jar");
+				} catch (IOException e1) {
+				
+				}
+            	
             	log.log(Level.INFO,"Unexpected exception while keeping alive the IDLE connection {0}", e);
+            	  System.exit(0);
             }
         }
     }
