@@ -233,17 +233,32 @@ public class main {
 						           
 								
 						        
+
 						 //    if (from.contains(_AlertEmailAddress))
 						//		{					            
+
+				//		     if (from.contains(_AlertEmailAddress))
+				//				{					            
+
 						     
 						         log.log(Level.INFO ,"Routing email with subject {0}",msg.getSubject());
 						         RouteMessage(msg.getSubject());
+
 						//      }
 						 //   else
 						 //      {
+
+				//		      }
+				//		    else
+				//		       {
+
 						      log.log(Level.INFO ,"Email not from : {0} and not routed",_AlertEmailAddress);
 					    	   
+
 						//   }
+
+				//		   }
+
 								
 							} catch (MessagingException e) {
 								// TODO Auto-generated catch block
