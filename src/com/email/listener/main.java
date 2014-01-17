@@ -38,7 +38,7 @@ public class main {
 	 private static String _Password="";
 	 private static String _AlertEmailAddress="";
 	 private static  Folder folder;
-
+	 private static boolean filterEmail = true;
 		private static ConnectionFactory factory;
 		private static Connection connection;
 		private static Channel channel;
@@ -61,32 +61,19 @@ public class main {
 	public static void main(String[] args) {
 		main m = new main();
 		
-	
-		
-		
+	if (args.length>0 )
+	{
+		if (args[0].equals("-debug"))
+		{
+			filterEmail=false;
+			 log.log(Level.INFO ,"filterEmail = {0}",filterEmail); 
+		}
+	}	
 		
 		m.AttachLogHandler();
 		m.GetConfig();
 	
-		/*
-		Thread t1 = new Thread(new Runnable() {
-
-	            public void run() {
-	            	 log.log(Level.INFO ,"Listening for new web querys" );
-	               
-	            	 Thread t1 = new Thread(
-               		        new SetupWebListener(folder,QUsername,QPassword,_Email,_Password,connection), "IdleConnectionKeepAlive"
-               		    );
-	            	 
-	            	 
-	            	 
-	            }
-		});
-	            	 t1.start();
-		
-	           
-		*/
-		
+				
 		if (	m.initialiseQueue())
 		{
 			m.StartListenting();
@@ -147,19 +134,7 @@ public class main {
 	
 		try{
 		
-	//		Properties props = new Properties();
-	//		log.log(Level.INFO ,"Processing config entries");
-	//		props.load(new FileInputStream("c:\\config.properties"));
-	//		QUsername = props.getProperty("qusername");
-	 //   	QPassword = props.getProperty("qpassword");
-	  //  	log.log(Level.INFO ,"Processing config entries complete");
-	   // 	factory = new ConnectionFactory();
-		//    factory.setHost("localhost");
-		 //   factory.setUsername(QUsername); 
-		//	factory.setPassword(QPassword); 
-		//	factory.setVirtualHost("/");   
-		    
-		   // connection = factory.newConnection();
+	
 		    Channel channel_Recv = connection.createChannel();
 		    Channel channel_Send = connection.createChannel();
 		    channel_Recv.queueDeclare(QUEUE_WEBREQUEST, false, false, false, null);
@@ -205,8 +180,8 @@ public class main {
 		   try {
 	            Session session = Session.getInstance(props, null);
 	            Store store = session.getStore();
-	        //    store.connect("imap-mail.outlook.com", _Email, _Password);
-	         store.connect("imap.gmail.com", _Email, _Password);
+	       //     store.connect("imap-mail.outlook.com", _Email, _Password);
+	        store.connect("imap.gmail.com", _Email, _Password);
 	            //  final Folder folder =    store.getDefaultFolder();
 	        
 	            folder = store.getFolder("INBOX");
@@ -234,33 +209,31 @@ public class main {
 								
 						        
 
-						 //    if (from.contains(_AlertEmailAddress))
-						//		{					            
+									            
 
-				//		     if (from.contains(_AlertEmailAddress))
-				//				{					            
+					     if (from.contains(_AlertEmailAddress) || !filterEmail)
+							{					            
 
 						     
 						         log.log(Level.INFO ,"Routing email with subject {0}",msg.getSubject());
 						         RouteMessage(msg.getSubject());
 
-						//      }
-						 //   else
-						 //      {
+						
 
-				//		      }
-				//		    else
-				//		       {
+						      }
+						    else
+						       {
 
 						      log.log(Level.INFO ,"Email not from : {0} and not routed",_AlertEmailAddress);
-					    	   
+						       }
+					
+							 
+							 
+							 }
+						
 
-						//   }
-
-				//		   }
-
-								
-							} catch (MessagingException e) {
+						 							
+							catch (MessagingException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
@@ -396,17 +369,30 @@ private static class KeepAliveRunnable implements Runnable {
             	log.log(Level.WARNING,"Aborting thread");
             } catch (MessagingException e) {
                 // Shouldn't really happen...
-            	  try {
-					Runtime.getRuntime().exec("cmd /c java -jar C:\\Users\\Ben\\Desktop\\EmailListener.jar");
-				} catch (IOException e1) {
+            	
 				
-				}
             	
             	log.log(Level.INFO,"Unexpected exception while keeping alive the IDLE connection {0}", e);
-            	  System.exit(0);
+            	
+            	  try {
+  					Runtime.getRuntime().exec("cmd /c java -jar C:\\EmailListener.jar");
+  					log.log(Level.INFO,"Executed new Listener");
+  				} catch (IOException e1) {
+  					
+  					try {
+  						Runtime.getRuntime().exec("java -jar C:\\EmailListener.jar");
+  						log.log(Level.INFO,"Executed new Listener");
+  					} catch (IOException e2) {
+  						// TODO Auto-generated catch block
+  						e2.printStackTrace();
+  					}
+            	
+            	System.exit(0);
+  				}
             }
         }
     }
 }
+
 }
 
