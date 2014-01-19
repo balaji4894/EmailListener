@@ -26,12 +26,11 @@ import com.sun.mail.imap.IMAPFolder;
 import com.sun.mail.imap.protocol.IMAPProtocol;
 
 
+
 public class main {
-	
+	public static main INSTANCE = new main();
 	private static final Logger log = Logger.getLogger( main.class.getName() );
-	 private final static String QUEUE_NEWEMAIL = "NEWEMAIL";
-	 private final static String QUEUE_WEBREQUEST = "EMAILWEBREQUEST";
-	 private final static String QUEUE_WEBRESPONSE = "EMAILWEBRESPONSE";
+	 private static String queue_new_email = "";
 	 private static String QUsername="";
 	 private  static String QPassword="";
 	 private static String _Email="";
@@ -39,9 +38,9 @@ public class main {
 	 private static String _AlertEmailAddress="";
 	 private static  Folder folder;
 	 private static boolean filterEmail = true;
-		private static ConnectionFactory factory;
-		private static Connection connection;
-		private static Channel channel;
+	 private static ConnectionFactory factory;
+	 private static Connection connection;
+	 private static Channel channel;
 	 
 	 static Double _FFLimit=0.0;
 	 private void AttachLogHandler()
@@ -59,26 +58,62 @@ public class main {
 			}
 	 }
 	public static void main(String[] args) {
-		main m = new main();
-		
-	if (args.length>0 )
-	{
-		if (args[0].equals("-debug"))
+		if (args.length>0 )
 		{
-			filterEmail=false;
-			 log.log(Level.INFO ,"filterEmail = {0}",filterEmail); 
+			if (args[0].equals("-debug"))
+			{
+				filterEmail=false;
+				 log.log(Level.INFO ,"filterEmail = {0}",filterEmail); 
+			}
+			else
+			{
+				 log.log(Level.INFO ,"filterEmail = {0}",filterEmail);
+			}
 		}
-	}	
-		
-		m.AttachLogHandler();
-		m.GetConfig();
+		else
+		{
+			 log.log(Level.INFO ,"no relevent arguements found"); 
+		}
+		INSTANCE.start();
+	}
 	
-				
-		if (	m.initialiseQueue())
+	private void start()
+	{
+		
+		 		
+		
+	
+		
+		AttachLogHandler();
+		GetConfig();
+	
+		
+		if (	initialiseQueue())
 		{
-			m.StartListenting();
+			 new ListenForWebPings().start();		
+			StartListenting();
 		}
 		
+	}
+	public ConnectionFactory getFactory()
+	{
+		return INSTANCE.factory;
+		
+	}
+	public Connection getConnection()
+	{
+		return INSTANCE.connection;
+		
+	}
+	public int getCount()
+	{
+		try {
+			return folder.getMessageCount();
+		} catch (MessagingException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return 0;
 	}
 	private void GetConfig()
 	{
@@ -91,6 +126,7 @@ public class main {
 	    	
 	    	QUsername = props.getProperty("qusername");
 	    	QPassword = props.getProperty("qpassword");
+	    	queue_new_email = props.getProperty("queue_new_email");
 	    	_AlertEmailAddress = props.getProperty("alertemail");
 			_FFLimit = Double.valueOf(props.getProperty("fflimit"));
 			 log.log(Level.INFO ,"Processing config entries complete");
@@ -300,7 +336,7 @@ public class main {
 	{
 		try
 		{
-		log.log(Level.INFO, "Connecting to queue {0}",QUEUE_NEWEMAIL);
+		log.log(Level.INFO, "Connecting to queue {0}",queue_new_email);
 		factory = new ConnectionFactory();
 	    factory.setUsername(QUsername); 
 		factory.setPassword(QPassword); 
@@ -308,7 +344,7 @@ public class main {
 		factory.setHost("localhost");
 		connection = factory.newConnection();
 		channel  = connection.createChannel();
-		channel.queueDeclare(QUEUE_NEWEMAIL, false, false, false, null);
+		channel.queueDeclare(queue_new_email, false, false, false, null);
 		log.log(Level.INFO, "SUCCESS : Queue initialised and running");
 		}
 		catch (Exception e)
@@ -323,8 +359,8 @@ private void RouteMessage(String message)
 {
 	try{
 	 
-	    channel.basicPublish("", QUEUE_NEWEMAIL, null, message.getBytes());
-	      log.log(Level.INFO,"Sent Email to queue {0} : {1}",new Object[]{QUEUE_NEWEMAIL,message});
+	    channel.basicPublish("", queue_new_email, null, message.getBytes());
+	      log.log(Level.INFO,"Sent Email to queue {0} : {1}",new Object[]{queue_new_email,message});
 	}
 	catch(Exception e)
 	{
@@ -365,9 +401,8 @@ private static class KeepAliveRunnable implements Runnable {
                         return null;
                     }
                 });
-            } catch (InterruptedException e) {
-            	log.log(Level.WARNING,"Aborting thread");
-            } catch (MessagingException e) {
+           
+            } catch (Exception e) {
                 // Shouldn't really happen...
             	
 				
@@ -375,20 +410,16 @@ private static class KeepAliveRunnable implements Runnable {
             	log.log(Level.INFO,"Unexpected exception while keeping alive the IDLE connection {0}", e);
             	
             	  try {
-  					Runtime.getRuntime().exec("cmd /c java -jar C:\\EmailListener.jar");
+  					Runtime.getRuntime().exec("cmd /k start cmd /c java -jar C:\\EmailListener.jar ");
   					log.log(Level.INFO,"Executed new Listener");
-  				} catch (IOException e1) {
+  				} catch (Exception e1) {
   					
-  					try {
-  						Runtime.getRuntime().exec("java -jar C:\\EmailListener.jar");
-  						log.log(Level.INFO,"Executed new Listener");
-  					} catch (IOException e2) {
-  						// TODO Auto-generated catch block
-  						e2.printStackTrace();
-  					}
+  					
+  						log.log(Level.INFO,e1.toString());
+  				
             	
-            	System.exit(0);
   				}
+            	  System.exit(0);
             }
         }
     }
