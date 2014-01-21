@@ -46,7 +46,7 @@ public class ListenToEmails implements Runnable{
 	 private static String _Password="";
 	 private static String _AlertEmailAddress="";
 	 private static  Folder folder;
-	 private static boolean filterEmail = true;
+	 private static boolean filterEmail = false;
 	 private static ConnectionFactory factory;
 	 private static Connection connection;
 	 private static Channel channel;
