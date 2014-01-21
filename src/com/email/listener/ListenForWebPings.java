@@ -25,9 +25,9 @@ public class ListenForWebPings extends Thread{
 		 try{
 		 final String RPC_QUEUE_NAME = "rpc_queue";
 
-		 ConnectionFactory factory = main.INSTANCE.getFactory();
+		 ConnectionFactory factory = StartListeners.INSTANCE.getFactory();
 		 
-		 Connection connection =  main.INSTANCE.getConnection();
+		 Connection connection =  StartListeners.INSTANCE.getConnection();
 		 Channel channel = connection.createChannel();
 
 		 channel.queueDeclare(RPC_QUEUE_NAME, false, false, false, null);
@@ -53,7 +53,7 @@ public class ListenForWebPings extends Thread{
 		     System.out.println("received request");
 		    try
 		    {
-		     int count = main.INSTANCE.getCount();
+		     int count = StartListeners.INSTANCE.getCount();
 		    
 		     if (count > 0)
 		     {
