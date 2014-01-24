@@ -40,25 +40,37 @@ public class ListenToEmails implements Runnable{
 
 	private static final Logger log = Logger.getLogger( ListenToEmails.class.getName() );
 	 private static String queue_new_email = "";
+	 private static String queue_send_tweet = "";
 	 private static String QUsername="";
 	 private  static String QPassword="";
 	 private static String _Email="";
 	 private static String _Password="";
 	 private static String _AlertEmailAddress="";
+	 private static String _TweetEmailAddress="";
 	 private static  Folder folder;
-	 private static boolean filterEmail = false;
+	 private static boolean filterEmail = true;
 	 private static ConnectionFactory factory;
 	 private static Connection connection;
 	 private static Channel channel;
 	 
 	 static Double _FFLimit=0.0;
 	
+	public ListenToEmails(String filter)
+	{
+		if (filter.equals("-debug"))
+		{
+			filterEmail=false;
+		
+		}
+		
+		
+	}
 	 public void run()
 		{
 			
 			 log.log(Level.INFO ,"Starting up on thread {0}",Thread.currentThread().getId() ); 		
 			
-		
+			 log.log(Level.INFO ,"Filtering emails =  {0}",filterEmail); 	
 			
 			
 			GetConfig();
@@ -103,7 +115,9 @@ public class ListenToEmails implements Runnable{
 		    	QUsername = props.getProperty("qusername");
 		    	QPassword = props.getProperty("qpassword");
 		    	queue_new_email = props.getProperty("queue_new_email");
+		    	queue_send_tweet = props.getProperty("queue_send_tweet");
 		    	_AlertEmailAddress = props.getProperty("alertemail");
+		    	_TweetEmailAddress = props.getProperty("tweetemail");
 				_FFLimit = Double.valueOf(props.getProperty("fflimit"));
 				 log.log(Level.INFO ,"Processing config entries complete");
 				 log.log(Level.INFO ,"Using Config : Email : {0} , Password : {1}, QUsername : {2}, QPassword : {3}, AlertEmail : {4}, FFLimit {5}",new Object[]{_Email,_Password,QUsername,QPassword,_AlertEmailAddress,_FFLimit});
@@ -171,16 +185,21 @@ public class ListenToEmails implements Runnable{
 
 							     
 							         log.log(Level.INFO ,"Routing email with subject {0}",msg.getSubject());
-							         RouteMessage(msg.getSubject());
+							         RouteMessage(msg.getSubject(),MessageType.EMAIL);
 
 							
 
 							      }
-							    else
-							       {
+						     else if (from.contains(_TweetEmailAddress))
+						     {
+						         log.log(Level.INFO ,"Routing email with subject {0}",msg.getSubject());
+						         RouteMessage(msg.getSubject(),MessageType.TWEET);
+						     }
+							 else
+							 {
 
-							      log.log(Level.INFO ,"Email not from : {0} and not routed",_AlertEmailAddress);
-							       }
+							      log.log(Level.INFO ,"Email from : {0} and not routed",msg.getFrom());
+							 }
 						
 								 
 								 
@@ -244,6 +263,7 @@ public class ListenToEmails implements Runnable{
 			connection = factory.newConnection();
 			channel  = connection.createChannel();
 			channel.queueDeclare(queue_new_email, false, false, false, null);
+			channel.queueDeclare(queue_send_tweet,false,false,false,null);
 			log.log(Level.INFO, "SUCCESS : Queue initialised and running");
 			}
 			catch (Exception e)
@@ -253,13 +273,25 @@ public class ListenToEmails implements Runnable{
 			}
 			return true;
 		}
-		
-	private void RouteMessage(String message)
+	private enum MessageType
+	{
+		EMAIL,TWEET
+	}
+	
+	private void RouteMessage(String message,MessageType type)
 	{
 		try{
-		 
+			if (type.equals(MessageType.EMAIL))
+			{
 		    channel.basicPublish("", queue_new_email, null, message.getBytes());
 		      log.log(Level.INFO,"Sent Email to queue {0} : {1}",new Object[]{queue_new_email,message});
+			}
+			else if (type.equals(MessageType.TWEET))
+			{
+				 channel.basicPublish("", queue_send_tweet, null, message.getBytes());
+			      log.log(Level.INFO,"Sent Tweet to queue {0} : {1}",new Object[]{queue_send_tweet,message});
+			}
+			
 		}
 		catch(Exception e)
 		{

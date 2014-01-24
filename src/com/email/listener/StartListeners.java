@@ -8,21 +8,25 @@ public class StartListeners {
 	public static void main(String[] args)
 	{
 		int i =1;
-		
-		while (i <100)
+		String arg="";
+		if (args.length > 0)
+		{
+		arg = args[0];	
+		}
+		while (i <20)
 		{
 		System.out.println("************Start up attempt "+i);
-		INSTANCE = new ListenToEmails(); 
+		INSTANCE = new ListenToEmails(arg); 
 		Thread thread = new Thread(INSTANCE);
 		thread.start(); 
 		System.out.println("Started new thread");
 		
-			while(thread.isAlive())
-			{
-				
-				
-				
-			}
+		try {
+			thread.join();
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 			System.out.println("thread died");
 		i++;
