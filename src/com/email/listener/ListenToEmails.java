@@ -1,6 +1,7 @@
 package com.email.listener;
 
 import java.io.FileInputStream;
+import java.util.Arrays;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -46,7 +47,8 @@ public class ListenToEmails implements Runnable{
 	 private static String _Email="";
 	 private static String _Password="";
 	 private static String _AlertEmailAddress="";
-	 private static String _TweetEmailAddress="";
+	 private static String _MyEmailAddress="";
+	 private static String[] _TweetEmailAddress;
 	 private static  Folder folder;
 	 private static boolean filterEmail = true;
 	 private static ConnectionFactory factory;
@@ -116,11 +118,14 @@ public class ListenToEmails implements Runnable{
 		    	QPassword = props.getProperty("qpassword");
 		    	queue_new_email = props.getProperty("queue_new_email");
 		    	queue_send_tweet = props.getProperty("queue_send_tweet");
-		    	_AlertEmailAddress = props.getProperty("alertemail");
-		    	_TweetEmailAddress = props.getProperty("tweetemail");
+		   	_AlertEmailAddress = props.getProperty("alertemail");
+		   // 	_TweetEmailAddress = props.getProperty("tweetemail");
+		    	
+		    	_TweetEmailAddress = props.getProperty("tweetemail").split(",");
+		    	_MyEmailAddress = props.getProperty("myemail");
 				_FFLimit = Double.valueOf(props.getProperty("fflimit"));
 				 log.log(Level.INFO ,"Processing config entries complete");
-				 log.log(Level.INFO ,"Using Config : Email : {0} , Password : {1}, QUsername : {2}, QPassword : {3}, AlertEmail : {4}, FFLimit {5}",new Object[]{_Email,_Password,QUsername,QPassword,_AlertEmailAddress,_FFLimit});
+			//	 log.log(Level.INFO ,"Using Config : Email : {0} , Password : {1}, QUsername : {2}, QPassword : {3}, AlertEmail : {4}, FFLimit {5}",new Object[]{_Email,_Password,QUsername,QPassword,_AlertEmailAddress,_FFLimit});
 				 
 			} catch (Exception e1) {
 				
@@ -176,29 +181,43 @@ public class ListenToEmails implements Runnable{
 									 log.log(Level.INFO ,"SUBJECT : {0}",msg.getSubject());
 							           
 									
-							        
+							 for (String s : _TweetEmailAddress)
+							 {
+								 if (from.contains(s))
+								 {
+									   log.log(Level.INFO ,"Routing email for tweet with subject {0}",msg.getSubject());
+								         RouteMessage("Swing : "+ msg.getSubject(),MessageType.TWEET); 
+								 }
+							 }
 
-										            
+							
+							 if (from.contains(_MyEmailAddress))
+							 {
+								 if (msg.getSubject().contains("BUY") || msg.getSubject().contains("SELL"))
+								 {
+								   log.log(Level.INFO ,"Routing email with subject {0}",msg.getSubject());
+							         RouteMessage(msg.getSubject(),MessageType.ORDER);
+								 }
+								 
+							 }
+							 
+							 
+							 
 
 						     if (from.contains(_AlertEmailAddress) || !filterEmail)
 								{					            
 
 							     
 							         log.log(Level.INFO ,"Routing email with subject {0}",msg.getSubject());
-							         RouteMessage(msg.getSubject(),MessageType.EMAIL);
+							         RouteMessage(msg.getSubject(),MessageType.ORDER);
 
 							
 
-							      }
-						     else if (from.contains(_TweetEmailAddress))
-						     {
-						         log.log(Level.INFO ,"Routing email with subject {0}",msg.getSubject());
-						         RouteMessage(msg.getSubject(),MessageType.TWEET);
-						     }
-							 else
+							     }
+						     else
 							 {
 
-							      log.log(Level.INFO ,"Email from : {0} and not routed",msg.getFrom());
+							      log.log(Level.INFO ,"Email from : {0} and not routed for execution",msg.getFrom());
 							 }
 						
 								 
@@ -275,13 +294,13 @@ public class ListenToEmails implements Runnable{
 		}
 	private enum MessageType
 	{
-		EMAIL,TWEET
+		ORDER,TWEET
 	}
 	
 	private void RouteMessage(String message,MessageType type)
 	{
 		try{
-			if (type.equals(MessageType.EMAIL))
+			if (type.equals(MessageType.ORDER))
 			{
 		    channel.basicPublish("", queue_new_email, null, message.getBytes());
 		      log.log(Level.INFO,"Sent Email to queue {0} : {1}",new Object[]{queue_new_email,message});
