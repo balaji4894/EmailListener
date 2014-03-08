@@ -1,12 +1,11 @@
 package com.email.listener;
 
-
-
 public class StartListeners {
 	static ListenToEmails INSTANCE;
 	
 	public static void main(String[] args)
 	{
+		new SendTweet().start();
 		int i =1;
 		String arg="";
 		if (args.length > 0)

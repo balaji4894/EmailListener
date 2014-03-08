@@ -3,6 +3,7 @@ package com.email.listener;
 import java.io.FileInputStream;
 import java.util.Arrays;
 import java.util.Properties;
+import java.util.logging.FileHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,7 +41,8 @@ public class ListenToEmails implements Runnable{
 
 
 	private static final Logger log = Logger.getLogger( ListenToEmails.class.getName() );
-	 private static String queue_new_email = "";
+	
+	private static String queue_new_email = "";
 	 private static String queue_send_tweet = "";
 	 private static String QUsername="";
 	 private  static String QPassword="";
@@ -67,9 +69,21 @@ public class ListenToEmails implements Runnable{
 		
 		
 	}
+	private FileHandler fh;
+	private void AddHandler()
+	{
+		try{
+		fh = new FileHandler("C://Log.log");
+		log.addHandler(fh);
+		}
+		catch (Exception e)
+		{
+			log.log(Level.WARNING,e.toString());	
+		}
+	}
 	 public void run()
 		{
-			
+			AddHandler();
 			 log.log(Level.INFO ,"Starting up on thread {0}",Thread.currentThread().getId() ); 		
 			
 			 log.log(Level.INFO ,"Filtering emails =  {0}",filterEmail); 	
@@ -186,7 +200,7 @@ public class ListenToEmails implements Runnable{
 								 if (from.contains(s))
 								 {
 									   log.log(Level.INFO ,"Routing email for tweet with subject {0}",msg.getSubject());
-								         RouteMessage("Swing : "+ msg.getSubject(),MessageType.TWEET); 
+								         RouteMessage(s+": "+ msg.getSubject(),MessageType.TWEET); 
 								 }
 							 }
 
