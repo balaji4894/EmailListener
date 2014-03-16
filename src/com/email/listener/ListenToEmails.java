@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.Properties;
 import java.util.logging.FileHandler;
 import java.util.logging.Level;
-import java.util.logging.Logger;
+
 
 import javax.mail.Folder;
 import javax.mail.Message;
@@ -35,12 +35,15 @@ import javax.mail.event.MessageCountEvent;
 import javax.mail.event.MessageCountListener;
 import javax.mail.internet.InternetAddress;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
+
 
 
 public class ListenToEmails implements Runnable{
 
 
-	private static final Logger log = Logger.getLogger( ListenToEmails.class.getName() );
+	private static  Logger logger =Logger.getLogger(ListenToEmails.class);
 	
 	private static String queue_new_email = "";
 	 private static String queue_send_tweet = "";
@@ -69,24 +72,16 @@ public class ListenToEmails implements Runnable{
 		
 		
 	}
-	private FileHandler fh;
 	private void AddHandler()
 	{
-		try{
-		fh = new FileHandler("C://Log.log");
-		log.addHandler(fh);
-		}
-		catch (Exception e)
-		{
-			log.log(Level.WARNING,e.toString());	
-		}
+		PropertyConfigurator.configure("c:\\log4j.properties"); 
 	}
 	 public void run()
 		{
 			AddHandler();
-			 log.log(Level.INFO ,"Starting up on thread {0}",Thread.currentThread().getId() ); 		
+			 logger.info("Starting up on thread "+Thread.currentThread().getId() ); 		
 			
-			 log.log(Level.INFO ,"Filtering emails =  {0}",filterEmail); 	
+			 logger.info("Filtering emails =  "+filterEmail); 	
 			
 			
 			GetConfig();
@@ -94,7 +89,7 @@ public class ListenToEmails implements Runnable{
 			
 			if (initialiseQueue())
 			{
-				 new ListenForWebPings().start();		
+			//	 new ListenForWebPings().start();		
 				StartListenting();
 			}
 			
@@ -123,7 +118,7 @@ public class ListenToEmails implements Runnable{
 		{
 			 try {
 				 Properties props = new Properties();
-				 log.log(Level.INFO ,"Processing config entries");
+				 logger.info("Processing config entries");
 				props.load(new FileInputStream("c:\\config.properties"));
 				_Email = props.getProperty("email");
 		    	_Password = props.getProperty("password");
@@ -138,12 +133,12 @@ public class ListenToEmails implements Runnable{
 		    	_TweetEmailAddress = props.getProperty("tweetemail").split(",");
 		    	_MyEmailAddress = props.getProperty("myemail");
 				_FFLimit = Double.valueOf(props.getProperty("fflimit"));
-				 log.log(Level.INFO ,"Processing config entries complete");
-			//	 log.log(Level.INFO ,"Using Config : Email : {0} , Password : {1}, QUsername : {2}, QPassword : {3}, AlertEmail : {4}, FFLimit {5}",new Object[]{_Email,_Password,QUsername,QPassword,_AlertEmailAddress,_FFLimit});
+				 logger.info("Processing config entries complete");
+			//	 logger.info(,"Using Config : Email : {0} , Password : {1}, QUsername : {2}, QPassword : {3}, AlertEmail : {4}, FFLimit {5}",new Object[]{_Email,_Password,QUsername,QPassword,_AlertEmailAddress,_FFLimit});
 				 
 			} catch (Exception e1) {
 				
-				 log.log(Level.INFO ,e1.toString());
+				 logger.warn(e1.toString());
 				
 			}
 			
@@ -185,21 +180,21 @@ public class ListenToEmails implements Runnable{
 							@Override
 							public void messagesAdded(MessageCountEvent arg0) {
 							
-								 log.log(Level.INFO ,"New EMail Received");
+								 logger.info("New EMail Received");
 								 try {
 									Message msg = folder.getMessage(folder.getMessageCount());
 									
 									String from = InternetAddress.toString(msg.getFrom());
-									 log.log(Level.INFO ,"SENT DATE : {0}",msg.getSentDate());
-									 log.log(Level.INFO ,"FROM : {0}",from);
-									 log.log(Level.INFO ,"SUBJECT : {0}",msg.getSubject());
+									 logger.info("SENT DATE : "+msg.getSentDate());
+									 logger.info("FROM : "+from);
+									 logger.info("SUBJECT : "+msg.getSubject());
 							           
 									
 							 for (String s : _TweetEmailAddress)
 							 {
 								 if (from.contains(s))
 								 {
-									   log.log(Level.INFO ,"Routing email for tweet with subject {0}",msg.getSubject());
+									   logger.info("Routing email for tweet with subject "+msg.getSubject());
 								         RouteMessage(s+": "+ msg.getSubject(),MessageType.TWEET); 
 								 }
 							 }
@@ -209,7 +204,7 @@ public class ListenToEmails implements Runnable{
 							 {
 								 if (msg.getSubject().contains("BUY") || msg.getSubject().contains("SELL"))
 								 {
-								   log.log(Level.INFO ,"Routing email with subject {0}",msg.getSubject());
+								   logger.info("Routing email with subject {0}"+msg.getSubject());
 							         RouteMessage(msg.getSubject(),MessageType.ORDER);
 								 }
 								 
@@ -222,7 +217,7 @@ public class ListenToEmails implements Runnable{
 								{					            
 
 							     
-							         log.log(Level.INFO ,"Routing email with subject {0}",msg.getSubject());
+							         logger.info("Routing email with subject "+msg.getSubject());
 							         RouteMessage(msg.getSubject(),MessageType.ORDER);
 
 							
@@ -231,7 +226,7 @@ public class ListenToEmails implements Runnable{
 						     else
 							 {
 
-							      log.log(Level.INFO ,"Email from : {0} and not routed for execution",msg.getFrom());
+							      logger.info("Email from : "+msg.getFrom()+" and not routed for execution");
 							 }
 						
 								 
@@ -271,7 +266,7 @@ public class ListenToEmails implements Runnable{
 	                        ((IMAPFolder) folder).idle();
 	                    }
 	                } catch (Exception ex) {
-	                	 log.log(Level.INFO ,ex.toString() );
+	                	 logger.warn(ex.toString() );
 	                	 if (t1.isAlive()) {
 	                	        t1.interrupt();
 	                	    }
@@ -287,7 +282,7 @@ public class ListenToEmails implements Runnable{
 		{
 			try
 			{
-			log.log(Level.INFO, "Connecting to queue {0}",queue_new_email);
+			logger.info("Connecting to queue "+queue_new_email);
 			factory = new ConnectionFactory();
 		    factory.setUsername(QUsername); 
 			factory.setPassword(QPassword); 
@@ -297,11 +292,11 @@ public class ListenToEmails implements Runnable{
 			channel  = connection.createChannel();
 			channel.queueDeclare(queue_new_email, false, false, false, null);
 			channel.queueDeclare(queue_send_tweet,false,false,false,null);
-			log.log(Level.INFO, "SUCCESS : Queue initialised and running");
+			logger.info("SUCCESS : Queue initialised and running");
 			}
 			catch (Exception e)
 			{
-				log.log(Level.SEVERE, "Failed initialisation of queue : {0}",e.toString());
+				logger.fatal("Failed initialisation of queue : "+e.toString());
 				return false;
 			}
 			return true;
@@ -317,18 +312,18 @@ public class ListenToEmails implements Runnable{
 			if (type.equals(MessageType.ORDER))
 			{
 		    channel.basicPublish("", queue_new_email, null, message.getBytes());
-		      log.log(Level.INFO,"Sent Email to queue {0} : {1}",new Object[]{queue_new_email,message});
+		      logger.info("Sent Email to queue "+queue_new_email+" : "+message);
 			}
 			else if (type.equals(MessageType.TWEET))
 			{
 				 channel.basicPublish("", queue_send_tweet, null, message.getBytes());
-			      log.log(Level.INFO,"Sent Tweet to queue {0} : {1}",new Object[]{queue_send_tweet,message});
+				 logger.info("Sent Tweet to queue "+queue_send_tweet+" : "+message);
 			}
 			
 		}
 		catch(Exception e)
 		{
-			log.log(Level.SEVERE, "Unable to route message : ",e.toString());
+			logger.fatal("Unable to route message : "+e.toString());
 		}
 	}
 	private static class KeepAliveRunnable implements Runnable {
@@ -345,14 +340,14 @@ public class ListenToEmails implements Runnable{
 
 		    @Override
 		    public void run() {
-		    	 log.log(Level.INFO ,"Running Keep Alive on thread {0}",Thread.currentThread().getId() );
+		    	 logger.info("Running Keep Alive on thread "+Thread.currentThread().getId() );
 		        while (!Thread.interrupted()) {
 		            try {
 		                Thread.sleep(KEEP_ALIVE_FREQ);
 
 		           //     Perform a NOOP just to keep alive the connection
-		               log.log(Level.INFO,"Performing a NOOP to keep the connection alive");
-		              ((IMAPFolder) folder).doCommand(new IMAPFolder.ProtocolCommand() {
+		               logger.info("Performing a NOOP to keep the connection alive");
+		               ((IMAPFolder) folder).doCommand(new IMAPFolder.ProtocolCommand() {
 		                   public Object doCommand(IMAPProtocol p)
 		                           throws ProtocolException {
 		                       p.simpleCommand("NOOP", null);
@@ -360,7 +355,7 @@ public class ListenToEmails implements Runnable{
 								int i;
 								try {
 									i = folder.getMessageCount();
-									log.log(Level.INFO,"Message Count : {0}",i);
+									logger.info("Message Count : "+i);
 								} catch (MessagingException e) {
 									// TODO Auto-generated catch block
 									e.printStackTrace();
@@ -375,18 +370,9 @@ public class ListenToEmails implements Runnable{
 		           } catch (Exception e) {
 		                // Shouldn't really happen...
 		            	
-						
+		            	logger.warn("Unexpected exception while keeping alive the IDLE connection "+e);
 		            	
-		            	log.log(Level.INFO,"Unexpected exception while keeping alive the IDLE connection {0}", e);
-		            	
-		           // /	  try {
-		  		//			Runtime.getRuntime().exec("cmd /k start cmd /c java -jar C:\\EmailListener.jar ");
-		  			///		log.log(Level.INFO,"Executed new Listener");
-		  			//	} catch (Exception e1) {
-		  					
-		  					
-		  				//		log.log(Level.INFO,e1.toString());
-		  				
+		   
 		            	
 		  				}
 		           

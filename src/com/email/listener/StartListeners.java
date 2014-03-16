@@ -1,10 +1,35 @@
 package com.email.listener;
 
+import org.apache.log4j.Logger;
+import org.apache.log4j.PropertyConfigurator;
+
 public class StartListeners {
-	static ListenToEmails INSTANCE;
+	 static StartListeners INSTANCE;
+	 static ListenToEmails LTE_INSTANCE;
+	static final Logger logger = Logger.getLogger(StartListeners.class);
+	
+	
+	public Logger getLogger()
+	{
+		return logger;
+	}
 	
 	public static void main(String[] args)
 	{
+		
+		INSTANCE = new StartListeners();
+		
+		INSTANCE.start(args);
+		
+		
+	}
+	
+	private void start(String[] args)
+	{
+		PropertyConfigurator.configure("c:\\log4j.properties"); 
+			
+		logger.info("Startup....Free memory : "+Runtime.getRuntime().freeMemory());
+				
 		new SendTweet().start();
 		int i =1;
 		String arg="";
@@ -14,20 +39,20 @@ public class StartListeners {
 		}
 		while (i <20)
 		{
-		System.out.println("************Start up attempt "+i);
-		INSTANCE = new ListenToEmails(arg); 
-		Thread thread = new Thread(INSTANCE);
+		logger.info("Start up attempt "+i);
+		LTE_INSTANCE = new ListenToEmails(arg); 
+		Thread thread = new Thread(LTE_INSTANCE);
 		thread.start(); 
-		System.out.println("Started new thread");
+		logger.info("Started new thread");
 		
 		try {
 			thread.join();
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
-			e.printStackTrace();
+			logger.warn(e.toString());
 		}
 		
-			System.out.println("thread died");
+			logger.info("thread died");
 		i++;
 		}
 		
