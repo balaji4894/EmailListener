@@ -74,7 +74,8 @@ public class ListenToEmails implements Runnable{
 	}
 	private void AddHandler()
 	{
-		PropertyConfigurator.configure("c:\\log4j.properties"); 
+		PropertyConfigurator.configure("/home/azureuser/EmailService/log4j.properties"); 
+	//	PropertyConfigurator.configure("c:\\log4j.properties"); 
 	}
 	 public void run()
 		{
@@ -119,7 +120,8 @@ public class ListenToEmails implements Runnable{
 			 try {
 				 Properties props = new Properties();
 				 logger.info("Processing config entries");
-				props.load(new FileInputStream("c:\\config.properties"));
+				props.load(new FileInputStream("/home/azureuser/EmailService/config.properties"));
+			//	props.load(new FileInputStream("c:\\config.properties"));
 				_Email = props.getProperty("email");
 		    	_Password = props.getProperty("password");
 		    	
@@ -297,6 +299,7 @@ public class ListenToEmails implements Runnable{
 			catch (Exception e)
 			{
 				logger.fatal("Failed initialisation of queue : "+e.toString());
+				logger.fatal("Is RabbitMq server running? to start the service type /sbin/service rabbitmq-server stop/start/etc.");
 				return false;
 			}
 			return true;

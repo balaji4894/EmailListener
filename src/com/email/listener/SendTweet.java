@@ -31,13 +31,14 @@ public class SendTweet extends Thread{
 	public void run()
 	{
 		try{
-		PropertyConfigurator.configure("c:\\log4j.properties"); 
-		
+		PropertyConfigurator.configure("/home/azureuser/EmailService/log4j.properties"); 
+	//	PropertyConfigurator.configure("c:\\log4j.properties"); 
 	
 		logger.info("From Tweet");
 			Properties props = new Properties();
 			logger.info("Processing config entries for tweeter");
-			props.load(new FileInputStream("c:\\config.properties"));
+			props.load(new FileInputStream("/home/azureuser/EmailService/config.properties"));
+		//	props.load(new FileInputStream("c:\\config.properties"));
 			QUsername = props.getProperty("qusername");
 	    	QPassword = props.getProperty("qpassword");
 	    	queue_send_tweet = props.getProperty("queue_send_tweet");

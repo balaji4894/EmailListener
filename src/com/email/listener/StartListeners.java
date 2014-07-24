@@ -26,11 +26,17 @@ public class StartListeners {
 	
 	private void start(String[] args)
 	{
-		PropertyConfigurator.configure("c:\\log4j.properties"); 
-			
-		logger.info("Startup....Free memory : "+Runtime.getRuntime().freeMemory());
 				
+		PropertyConfigurator.configure("/home/azureuser/EmailService/log4j.properties"); 
+	//	PropertyConfigurator.configure("c:\\log4j.properties"); 
+		logger.info("Startup....Free memory : "+Runtime.getRuntime().freeMemory());
+		boolean _HasErrored = false;	
+	
 		new SendTweet().start();
+		
+		
+		
+		
 		int i =1;
 		String arg="";
 		if (args.length > 0)
@@ -53,6 +59,18 @@ public class StartListeners {
 		}
 		
 			logger.info("thread died");
+			
+			if (!_HasErrored)
+			{
+				SendTweet tw = new SendTweet();
+				tw.SendNewTweet("Errors encountered with email listener. Cannot verify reliability");
+				
+				_HasErrored=true;
+				
+			}
+			
+			
+			
 		i++;
 		}
 		
