@@ -4,10 +4,10 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 
 public class StartListeners {
-	 static StartListeners INSTANCE;
-	 static ListenToEmails LTE_INSTANCE;
+	static StartListeners INSTANCE;
+	static ListenToEmails LTE_INSTANCE;
 	static final Logger logger = Logger.getLogger(StartListeners.class);
-	
+	private SendTweet tw;
 	
 	public Logger getLogger()
 	{
@@ -62,7 +62,7 @@ public class StartListeners {
 			
 			if (!_HasErrored)
 			{
-				SendTweet tw = new SendTweet();
+				tw = new SendTweet();
 				tw.SendNewTweet("Errors encountered with email listener. Cannot verify reliability");
 				
 				_HasErrored=true;
@@ -74,6 +74,7 @@ public class StartListeners {
 		i++;
 		}
 		
+		tw.SendNewTweet("Fatal error with email listener. Shutting down.");
 		
 	}
 	
