@@ -27,7 +27,7 @@ public class StartListeners {
 	private void start(String[] args)
 	{
 				
-		PropertyConfigurator.configure("/home/azureuser/EmailService/log4j.properties"); 
+		PropertyConfigurator.configure("/home/benberg/EmailService/log4j.properties"); 
 	//	PropertyConfigurator.configure("c:\\log4j.properties"); 
 		logger.info("Startup....Free memory : "+Runtime.getRuntime().freeMemory());
 		

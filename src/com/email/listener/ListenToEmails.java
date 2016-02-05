@@ -28,6 +28,11 @@ import com.sun.mail.iap.ProtocolException;
 import com.sun.mail.imap.IMAPFolder;
 import com.sun.mail.imap.protocol.IMAPProtocol;
 
+import twitter4j.Status;
+import twitter4j.Twitter;
+import twitter4j.TwitterFactory;
+import twitter4j.auth.AccessToken;
+
 import javax.mail.*;
 import javax.mail.event.MessageChangedEvent;
 import javax.mail.event.MessageChangedListener;
@@ -74,7 +79,7 @@ public class ListenToEmails implements Runnable{
 	}
 	private void AddHandler()
 	{
-		PropertyConfigurator.configure("/home/azureuser/EmailService/log4j.properties"); 
+		PropertyConfigurator.configure("/home/benberg/EmailService/log4j.properties"); 
 	//	PropertyConfigurator.configure("c:\\log4j.properties"); 
 	}
 	 public void run()
@@ -88,11 +93,11 @@ public class ListenToEmails implements Runnable{
 			GetConfig();
 		
 			
-			if (initialiseQueue())
-			{
+		//	if (initialiseQueue())
+		//	{
 			//	 new ListenForWebPings().start();		
 				StartListenting();
-			}
+		//	}
 			
 		}
 		public ConnectionFactory getFactory()
@@ -120,7 +125,7 @@ public class ListenToEmails implements Runnable{
 			 try {
 				 Properties props = new Properties();
 				 logger.info("Processing config entries");
-				props.load(new FileInputStream("/home/azureuser/EmailService/config.properties"));
+				props.load(new FileInputStream("/home/benberg/EmailService/config.properties"));
 			//	props.load(new FileInputStream("c:\\config.properties"));
 				_Email = props.getProperty("email");
 		    	_Password = props.getProperty("password");
@@ -314,12 +319,14 @@ public class ListenToEmails implements Runnable{
 		try{
 			if (type.equals(MessageType.ORDER))
 			{
-		    channel.basicPublish("", queue_new_email, null, message.getBytes());
+		//    channel.basicPublish("", queue_new_email, null, message.getBytes());
+				SendNewTweet(message);
 		      logger.info("Sent Email to queue "+queue_new_email+" : "+message);
 			}
 			else if (type.equals(MessageType.TWEET))
 			{
-				 channel.basicPublish("", queue_send_tweet, null, message.getBytes());
+		//		 channel.basicPublish("", queue_send_tweet, null, message.getBytes());
+				SendNewTweet(message);
 				 logger.info("Sent Tweet to queue "+queue_send_tweet+" : "+message);
 			}
 			
@@ -382,6 +389,39 @@ public class ListenToEmails implements Runnable{
 		         }
 		       }
 		    }
+	
+	public void SendNewTweet(String message)
+	
+	 {
+			try{
+			   TwitterFactory factory = new TwitterFactory();
+			    AccessToken accessToken = loadAccessToken();
+			    Twitter twitter = factory.getInstance();
+			    twitter.setOAuthConsumer("uElgz3OkbjbZZ2edhxlw", "PQVMxp8W2oB0qinvQurRfDPfioVjG8vYg1hCL0tYnI");
+			    twitter.setOAuthAccessToken(accessToken);
+			  
+			    
+			    Status status = twitter.updateStatus(message);
+			    logger.info("Successfully updated the status to [" + status.getText() + "].");
+			    
+			  }
+			catch (Exception e)
+			{
+				logger.warn(e.toString());
+			}
+	 }
+			  private static AccessToken loadAccessToken(){
+			    String token = "2300082091-SXJzIyt7ZYMSI86kqAFopxKoOy27fr1MnlLFmo5";
+			    String tokenSecret = "iKGYQzwDPDCazZN0iXQUwUbf23CCHhXqdEEEIFTGSvZ56";
+			    return new AccessToken(token, tokenSecret);
+			  }
+			
+		
+			
+
 		}
+	
+	
+		
 
 
